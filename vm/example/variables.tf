@@ -210,6 +210,24 @@ variable "key_vault" {
   default     = null
 }
 
+# ── Extensions ────────────────────────────────────────────────────────────────
+
+variable "extensions" {
+  description = "Map of VM extensions to be installed. The key is the extension name."
+  type = map(object({
+    publisher                   = string
+    type                        = string
+    type_handler_version        = string
+    auto_upgrade_minor_version  = optional(bool, true)
+    automatic_upgrade_enabled   = optional(bool, false)
+    failure_suppression_enabled = optional(bool, false)
+    settings                    = optional(any, {})
+    protected_settings          = optional(any, {})
+    provision_after_extensions  = optional(list(string), [])
+  }))
+  default = {}
+}
+
 # ── Tags ──────────────────────────────────────────────────────────────────────
 
 variable "tags" {

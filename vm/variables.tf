@@ -1,20 +1,18 @@
-variable "create_resource_group" {
-  description = "Whether to create resource group and use it for all networking resources"
-  default     = false
-}
-
 variable "resource_group_name" {
   description = "A container that holds related resources for an Azure solution"
+  type        = string
   default     = ""
 }
 
 variable "location" {
   description = "The location/region to keep all your network resources. To get the list of all locations with table format from azure cli, run 'az account list-locations -o table'"
+  type        = string
   default     = ""
 }
 
 variable "resource_prefix" {
-  description = "(Optional) Prefix to use for all resoruces created (Defaults to resource_group_name)"
+  description = "(Optional) Prefix to use for all resources created (Defaults to resource_group_name)"
+  type        = string
   default     = ""
 }
 
@@ -28,69 +26,81 @@ variable "random_password_length" {
 
 variable "create_public_ip_address" {
   description = "Create a Public IP Address to associate with the NIC"
+  type        = bool
   default     = false
 }
 
 variable "public_ip_allocation_method" {
   description = "Defines the allocation method for this IP address. Possible values are `Static` or `Dynamic`"
+  type        = string
   default     = "Static"
 }
 
 variable "public_ip_sku" {
   description = "The SKU of the Public IP. Accepted values are `Basic` and `Standard`"
+  type        = string
   default     = "Standard"
 }
 
 variable "domain_name_label" {
   description = "Label for the Domain Name. Will be used to make up the FQDN. If a domain name label is specified, an A DNS record is created for the public IP in the Microsoft Azure DNS system."
+  type        = string
   default     = null
 }
 
 variable "public_ip_sku_tier" {
   description = "The SKU Tier that should be used for the Public IP. Possible values are `Regional` and `Global`"
+  type        = string
   default     = "Regional"
 }
 
 variable "public_ip_prefix_id" {
   description = "The public ip prefix resource id"
+  type        = string
   default     = null
 }
 
 variable "dns_servers" {
   description = "List of dns servers to use for network interface"
+  type        = list(string)
   default     = []
 }
 
 variable "enable_ip_forwarding" {
   description = "Should IP Forwarding be enabled? Defaults to false"
+  type        = bool
   default     = false
 }
 
 variable "enable_accelerated_networking" {
   description = "Should Accelerated Networking be enabled? Defaults to false."
+  type        = bool
   default     = false
 }
 
 variable "internal_dns_name_label" {
   description = "The (relative) DNS Name used for internal communications between Virtual Machines in the same Virtual Network."
+  type        = string
   default     = null
 }
 
 variable "private_ip_address_allocation_type" {
   description = "The allocation method used for the Private IP Address. Possible values are Dynamic and Static."
+  type        = string
   default     = "Dynamic"
 }
 
 variable "private_ip_address" {
   description = "The Static IP Address which should be used. This is valid only when `private_ip_address_allocation` is set to `Static` "
+  type        = string
   default     = null
 }
 
 
 
-
 variable "virtual_machine_name" {
   description = "The name of the virtual machine."
+  type        = string
   default     = ""
 }
 
@@ -143,67 +153,80 @@ variable "existing_nsg_id" {
 
 variable "virtual_machine_size" {
   description = "The Virtual Machine SKU for the Virtual Machine, Default is Standard_A2_V2"
+  type        = string
   default     = "Standard_A2_v2"
 }
 
 variable "disable_password_authentication" {
   description = "Should Password Authentication be disabled on this Virtual Machine? Defaults to true."
+  type        = bool
   default     = true
 }
 
 variable "admin_username" {
   description = "The username of the local administrator used for the Virtual Machine."
+  type        = string
   default     = "azureuser"
 }
 
 variable "admin_password" {
   description = "The Password which should be used for the local-administrator on this Virtual Machine"
+  type        = string
   default     = null
 }
 
 variable "source_image_id" {
   description = "The ID of an Image which each Virtual Machine should be based on"
+  type        = string
   default     = null
 }
 
 variable "dedicated_host_id" {
   description = "The ID of a Dedicated Host where this machine should be run on."
+  type        = string
   default     = null
 }
 
 variable "custom_data" {
-  description = "Base64 encoded file of a bash script that gets run once by cloud-init upon VM creation"
+  description = "Raw (unencoded) bash script that gets run once by cloud-init upon VM creation. The module handles base64 encoding."
+  type        = string
   default     = null
 }
 
 variable "user_data" {
-  description = "The Base64-Encoded User Data which should be used for this Virtual Machine."
+  description = "Raw (unencoded) user data for this Virtual Machine. The module handles base64 encoding."
+  type        = string
   default     = null
 }
 
 variable "enable_encryption_at_host" {
   description = "Should all of the disks (including the temp disk) attached to this Virtual Machine be encrypted by enabling Encryption at Host?"
+  type        = bool
   default     = false
 }
 
 variable "enable_tpm" {
-  description = "(Optional) Enable vTPM on the virtuam machine"
+  description = "(Optional) Enable vTPM on the virtual machine"
+  type        = bool
   default     = false
 }
 
 variable "vm_availability_zone" {
   description = "The Zone in which this Virtual Machine should be created. Conflicts with availability set and shouldn't use both"
+  type        = string
   default     = null
 }
 
 
 variable "generate_admin_ssh_key" {
   description = "Generates a secure private key and encodes it as PEM."
+  type        = bool
   default     = true
 }
 
 variable "admin_ssh_key_data" {
   description = "specify the path to the existing SSH key to authenticate Linux virtual machine"
+  type        = string
   default     = null
 }
 
@@ -250,56 +273,66 @@ variable "source_image_version" {
 
 variable "os_disk_storage_account_type" {
   description = "The Type of Storage Account which should back this the Internal OS Disk. Possible values include Standard_LRS, StandardSSD_LRS and Premium_LRS."
+  type        = string
   default     = "StandardSSD_LRS"
 }
 
 variable "os_disk_caching" {
   description = "The Type of Caching which should be used for the Internal OS Disk. Possible values are `None`, `ReadOnly` and `ReadWrite`"
+  type        = string
   default     = "ReadWrite"
 }
 
 variable "disk_encryption_set_id" {
   description = "The ID of the Disk Encryption Set which should be used to Encrypt this OS Disk. The Disk Encryption Set must have the `Reader` Role Assignment scoped on the Key Vault - in addition to an Access Policy to the Key Vault"
+  type        = string
   default     = null
 }
 
 variable "disk_size_gb" {
   description = "The Size of the Internal OS Disk in GB, if you wish to vary from the size used in the image this Virtual Machine is sourced from."
+  type        = number
   default     = null
 }
 
 variable "enable_os_disk_write_accelerator" {
   description = "Should Write Accelerator be Enabled for this OS Disk? This requires that the `storage_account_type` is set to `Premium_LRS` and that `caching` is set to `None`."
+  type        = bool
   default     = false
 }
 
 variable "os_disk_name" {
   description = "The name which should be used for the Internal OS Disk"
+  type        = string
   default     = null
 }
 
 variable "enable_ultra_ssd_data_disk_storage_support" {
   description = "Should the capacity to enable Data Disks of the UltraSSD_LRS storage account type be supported on this Virtual Machine"
+  type        = bool
   default     = false
 }
 
 variable "managed_identity_type" {
   description = "The type of Managed Identity which should be assigned to the Linux Virtual Machine. Possible values are `SystemAssigned`, `UserAssigned` and `SystemAssigned, UserAssigned`"
+  type        = string
   default     = null
 }
 
 variable "managed_identity_ids" {
   description = "A list of User Managed Identity ID's which should be assigned to the Linux Virtual Machine."
+  type        = list(string)
   default     = null
 }
 
 variable "enable_boot_diagnostics" {
   description = "Should the boot diagnostics enabled?"
+  type        = bool
   default     = false
 }
 
 variable "data_disks" {
-  description = "Managed Data Disks for azure viratual machine"
+  description = "Managed Data Disks for azure virtual machine"
   type = list(object({
     name                 = string
     storage_account_type = string
@@ -311,26 +344,31 @@ variable "data_disks" {
 
 variable "create_storage_account" {
   description = "Create a dedicated storage account for boot diagnostics. Defaults to false – Azure managed boot diagnostics (storage_account_uri = null) is used instead."
+  type        = bool
   default     = false
 }
 
 variable "storage_account_name" {
-  description = "The name of the storage account used for storing virtal hard disks"
+  description = "The name of the storage account used for storing virtual hard disks"
+  type        = string
   default     = null
 }
 
 variable "storage_account_tier_type" {
   description = "The storage account tier (used only when creating a new storage account)"
+  type        = string
   default     = "Standard"
 }
 
 variable "storage_account_replication_type" {
   description = "The type of replication for the storage account (used only when creating a new storage account)"
+  type        = string
   default     = "ZRS"
 }
 
 variable "storage_account_resource_group_name" {
   description = "The resource group that contains the storage account"
+  type        = string
   default     = null
 }
 
@@ -347,14 +385,14 @@ variable "key_vault" {
   default     = null
 }
 
-variable "enable_key_vault_purge_protection" {
-  description = "Should Purge Protection be enabled for the Key Vault"
+variable "key_vault_purge_protection_enabled" {
+  description = "Default for purge protection when not specified inside the key_vault object. Set true for production."
   type        = bool
-  default     = true
+  default     = false
 }
 
 variable "key_vault_soft_delete_retention_days" {
-  description = "The number of days that items should be retained for once soft-deleted. This value can be between 7 and 90 days."
+  description = "Default soft-delete retention days when not specified inside the key_vault object. Must be between 7 and 90."
   type        = number
   default     = 7
 }

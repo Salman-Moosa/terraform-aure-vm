@@ -7,19 +7,17 @@
 
 resource_group_name = "devops"
 
-# The RG is in UK South but the VNet lives in Central India.
-# "location" drives where VM resources (NIC, disk, VM) are deployed.
-# This must match the region of the VNet/subnet you are attaching to.
+
 location = "centralindia"
 
 virtual_machine_name = "vm-test-app"
-resource_prefix      = "devops" # Optional prefix; defaults to resource_group_name if blank
+
 
 # ─── Networking ───────────────────────────────────────────────────────────────
 # Subnet resource ID — paste the output from the VNet module.
 # e.g. if using modules: subnet_id = module.vnet.subnet_ids["public-az1"]
 
-subnet_id                     = "/subscriptions/26adfa24-368d-4a2c-b0d6-9b1ed5bf4d11/resourceGroups/devops/providers/Microsoft.Network/virtualNetworks/dev-vnet/subnets/db-az1"
+subnet_id = "/subscriptions/26adfa24-368d-4a2c-b0d6-9b1ed5bf4d11/resourceGroups/devops/providers/Microsoft.Network/virtualNetworks/dev-vnet/subnets/db-az1"
 
 # ─── Private IP ───────────────────────────────────────────────────────────────
 # Default is Dynamic. Set to Static and provide an address if needed.
@@ -30,7 +28,7 @@ private_ip_address_allocation_type = "Dynamic"
 # ─── Public IP (optional) ─────────────────────────────────────────────────────
 # Set create_public_ip_address = true to attach a public IP to the VM NIC.
 
-create_public_ip_address = true
+create_public_ip_address    = true
 public_ip_allocation_method = "Static"
 public_ip_sku               = "Standard"
 
@@ -47,9 +45,9 @@ nsg_rules = {
     protocol                   = "Tcp"
     source_port_range          = "*"
     destination_port_range     = "22"
-    source_address_prefix      = "10.0.0.0/8"
+    source_address_prefix      = "*"
     destination_address_prefix = "*"
-    description                = "Allow SSH from internal networks"
+    description                = "Allow SSH from all networks"
   }
   AllowHTTPS = {
     priority                   = 110
@@ -80,11 +78,10 @@ generate_admin_ssh_key = true
 # admin_username       = "azureadmin"
 # vm_availability_zone = "1"
 
-# custom_data = base64encode(<<-EOF
-# #!/bin/bash
-# echo "Hello, World!" > /var/log/custom-data.txt
-# EOF
-# )
+custom_data = <<-EOF
+#!/bin/bash
+echo "Hello, World!" > /var/log/custom-data.txt
+EOF
 
 # ─── OS Image ─────────────────────────────────────────────────────────────────
 # Ubuntu 22.04 LTS
@@ -126,6 +123,31 @@ data_disks = [
   # },
 ]
 
+# ─── Extensions (optional) ────────────────────────────────────────────────────────────
+# Map of VM extensions to be installed.
+
+extensions = {
+  "CustomScript" = {
+    publisher            = "Microsoft.Azure.Extensions"
+    type                 = "CustomScript"
+    type_handler_version = "2.1"
+    settings = {
+      "commandToExecute" = "echo 'Hello World' > /tmp/hello.txt"
+    }
+  }
+  #   "OmsAgentForLinux" = {
+  #     publisher            = "Microsoft.EnterpriseCloud.Monitoring"
+  #     type                 = "OmsAgentForLinux"
+  #     type_handler_version = "1.13"
+  #     settings = {
+  #       "workspaceId" = "your-workspace-id"
+  #     }
+  #     protected_settings = {
+  #       "workspaceKey" = "your-workspace-key"
+  #     }
+  #   }
+}
+
 # ─── Key Vault – SSH key storage ──────────────────────────────────────────────
 # When key_vault is set, the module will:
 #   1. Create the Key Vault in the devops RG
@@ -144,7 +166,7 @@ key_vault = {
   # ── Additional Secrets Officers (write access) ──────────────────────────
   secret_officers = [
     # { name = "my-team-sp", principal_id = "<object-id>" },
-    { name = "devops-sandbox-admins", principal_id = "8eb5c0d8-484b-49eb-bbee-f91d3a02e8b0" }
+    # { name = "devops-sandbox-admins", principal_id = "8eb5c0d8-484b-49eb-bbee-f91d3a02e8b0" }
   ]
 
   # ── Secrets Readers (read-only) ─────────────────────────────────────────

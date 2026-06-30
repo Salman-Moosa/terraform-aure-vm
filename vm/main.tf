@@ -1,14 +1,13 @@
 locals {
-  resource_group_name = element(coalescelist(data.azurerm_resource_group.rgrp[*].name, azurerm_resource_group.rg[*].name, [""]), 0)
+  resource_group_name = var.resource_group_name
   resource_prefix     = var.resource_prefix == "" ? local.resource_group_name : var.resource_prefix
-  location            = element(coalescelist(data.azurerm_resource_group.rgrp[*].location, azurerm_resource_group.rg[*].location, [""]), 0)
 
   # This module creates exactly 1 Linux VM.
   instances_count = 1
 
   storage_account_name = var.storage_account_name != null && var.storage_account_name != "" ? format("%s", lower(replace(var.storage_account_name, "/[[:^alnum:]]/", ""))) : format("%sstvhd", lower(replace(local.resource_prefix, "/[[:^alnum:]]/", "")))
 
-  # Derived: is any NIC-level NSG active?
+  # Derived: is any NIC-level NSG active
   nic_nsg_create   = length(var.nsg_rules) > 0
   nic_nsg_existing = var.existing_nsg_id != null && length(var.nsg_rules) == 0
   attach_nsg       = local.nic_nsg_create || local.nic_nsg_existing
@@ -45,9 +44,9 @@ resource "azurerm_key_vault" "this" {
   tenant_id                  = data.azurerm_client_config.current.tenant_id
   sku_name                   = try(var.key_vault.sku_name, "standard")
   rbac_authorization_enabled = true
-  purge_protection_enabled   = var.key_vault.purge_protection_enabled
-  soft_delete_retention_days = var.key_vault.soft_delete_retention_days
-  tags                       = var.tags
+  purge_protection_enabled   = var.key_vault_purge_protection_enabled
+  soft_delete_retention_days = var.key_vault_soft_delete_retention_days
+  tags                       = merge({ "VirtualMachineName" = var.virtual_machine_name }, var.tags)
 }
 
 ###--- RBAC: deploying identity (pipeline SP) → Secrets Officer ---------------
@@ -116,22 +115,7 @@ resource "azurerm_key_vault_secret" "admin_ssh_key" {
   ]
 }
 
-#---------------------------------------------------------
-# Resource Group Creation or selection - Default is "false" for creation
-#----------------------------------------------------------
 
-data "azurerm_resource_group" "rgrp" {
-  count = var.create_resource_group == false ? 1 : 0
-  name  = var.resource_group_name
-}
-
-resource "azurerm_resource_group" "rg" {
-  count    = var.create_resource_group ? 1 : 0
-  name     = lower(var.resource_group_name)
-  location = var.location
-  tags     = merge({ "ResourceName" = format("%s", var.resource_group_name) }, var.tags, )
-
-}
 
 #----------------------------------------------------------
 # Random Resources for Password generation 
@@ -161,15 +145,14 @@ data "azurerm_resource_group" "storage_rg" {
 resource "azurerm_storage_account" "storage" {
   count = var.create_storage_account ? 1 : 0
 
-  name                       = local.storage_account_name
-  resource_group_name        = var.storage_account_resource_group_name != null ? var.storage_account_resource_group_name : local.resource_group_name
-  location                   = var.location
-  account_kind               = "StorageV2"
-  account_tier               = var.storage_account_tier_type
-  account_replication_type   = var.storage_account_replication_type
-  https_traffic_only_enabled = true
+  name                     = local.storage_account_name
+  resource_group_name      = var.storage_account_resource_group_name != null ? var.storage_account_resource_group_name : local.resource_group_name
+  location                 = var.location
+  account_kind             = "StorageV2"
+  account_tier             = var.storage_account_tier_type
+  account_replication_type = var.storage_account_replication_type
 
-  tags = merge({ "ResourceName" = local.storage_account_name }, var.tags, )
+  tags = var.tags
 
 
 
@@ -184,7 +167,7 @@ resource "azurerm_storage_account" "storage" {
 resource "azurerm_public_ip" "pip" {
   count = var.create_public_ip_address ? 1 : 0
 
-  name                = lower("${local.resource_prefix}-vm-${var.virtual_machine_name}-pip")
+  name                = lower("vm-${var.virtual_machine_name}-pip")
   resource_group_name = local.resource_group_name
   location            = var.location
   allocation_method   = var.public_ip_allocation_method
@@ -193,7 +176,7 @@ resource "azurerm_public_ip" "pip" {
   domain_name_label   = var.domain_name_label
   public_ip_prefix_id = var.public_ip_prefix_id
 
-  tags = merge({ "ResourceName" = lower("${local.resource_prefix}-vm-${var.virtual_machine_name}-pip") }, var.tags)
+  tags = var.tags
 
   lifecycle {
     ignore_changes = [tags, ip_tags]
@@ -205,7 +188,7 @@ resource "azurerm_public_ip" "pip" {
 #---------------------------------------
 
 resource "azurerm_network_interface" "nic" {
-  name                           = lower("${local.resource_prefix}-vm-${var.virtual_machine_name}-nic")
+  name                           = lower("vm-${var.virtual_machine_name}-nic")
   resource_group_name            = local.resource_group_name
   location                       = var.location
   dns_servers                    = var.dns_servers
@@ -213,10 +196,10 @@ resource "azurerm_network_interface" "nic" {
   accelerated_networking_enabled = var.enable_accelerated_networking
   internal_dns_name_label        = var.internal_dns_name_label
 
-  tags = merge({ "ResourceName" = lower("${local.resource_prefix}-vm-${var.virtual_machine_name}-nic") }, var.tags)
+  tags = var.tags
 
   ip_configuration {
-    name                          = lower("${local.resource_prefix}-vm-${var.virtual_machine_name}-nic-ipconfig")
+    name                          = lower("vm-${var.virtual_machine_name}-nic-ipconfig")
     primary                       = true
     subnet_id                     = var.subnet_id
     private_ip_address_allocation = var.private_ip_address_allocation_type
@@ -241,11 +224,11 @@ resource "azurerm_network_interface" "nic" {
 resource "azurerm_network_security_group" "nic_nsg" {
   count = local.nic_nsg_create ? 1 : 0
 
-  name                = lower("${local.resource_prefix}-vm-${var.virtual_machine_name}-nsg")
+  name                = lower("vm-${var.virtual_machine_name}-nsg")
   resource_group_name = local.resource_group_name
   location            = var.location
 
-  tags = merge({ "ResourceName" = lower("${local.resource_prefix}-vm-${var.virtual_machine_name}-nsg") }, var.tags)
+  tags = var.tags
 
   dynamic "security_rule" {
     # map(object) — each rule keyed by name; adding/removing one rule is stable
@@ -275,13 +258,13 @@ resource "azurerm_network_interface_security_group_association" "nic_nsg" {
 
 
 #---------------------------------------
-# Linux Virutal machine
+# Linux Virtual machine
 #---------------------------------------
 
 resource "azurerm_linux_virtual_machine" "linux_vm" {
   count = local.instances_count
 
-  name = lower("${var.virtual_machine_name}")
+  name = lower(var.virtual_machine_name)
 
   computer_name                   = substr(lower(replace(var.virtual_machine_name, "/[^0-9A-Za-z\\-]/", "")), 0, 64)
   resource_group_name             = local.resource_group_name
@@ -295,13 +278,13 @@ resource "azurerm_linux_virtual_machine" "linux_vm" {
   provision_vm_agent              = true
   allow_extension_operations      = true
   dedicated_host_id               = var.dedicated_host_id
-  custom_data                     = var.custom_data
-  user_data                       = var.user_data
+  custom_data                     = var.custom_data != null ? base64encode(var.custom_data) : null
+  user_data                       = var.user_data != null ? base64encode(var.user_data) : null
   encryption_at_host_enabled      = var.enable_encryption_at_host
   zone                            = var.vm_availability_zone
   vtpm_enabled                    = var.enable_tpm
 
-  tags = merge({ "ResourceName" = lower("${var.virtual_machine_name}") }, var.tags, )
+  tags = var.tags
 
   dynamic "admin_ssh_key" {
     for_each = var.disable_password_authentication ? [1] : []
@@ -374,14 +357,14 @@ resource "azurerm_linux_virtual_machine" "linux_vm" {
 resource "azurerm_managed_disk" "data_disk" {
   for_each = local.vm_data_disks
 
-  name                 = "${local.resource_prefix}-vm-${var.virtual_machine_name}-datadisk-${each.value.idx}"
+  name                 = "vm-${var.virtual_machine_name}-datadisk-${each.value.idx}"
   resource_group_name  = local.resource_group_name
   location             = var.location
   storage_account_type = lookup(each.value.data_disk, "storage_account_type", "StandardSSD_LRS")
   create_option        = "Empty"
   disk_size_gb         = each.value.data_disk.disk_size_gb
 
-  tags = merge({ "ResourceName" = "${local.resource_prefix}-vm-${var.virtual_machine_name}-datadisk-${each.value.idx}" }, var.tags, )
+  tags = merge({ "ResourceName" = "vm-${var.virtual_machine_name}-datadisk-${each.value.idx}" }, var.tags)
 
   lifecycle {
     ignore_changes = [

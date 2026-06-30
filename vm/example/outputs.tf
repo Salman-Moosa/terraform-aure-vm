@@ -32,3 +32,8 @@ output "network_security_group_id" {
   description = "ID of the NIC-level NSG created by the module, or null"
   value       = module.virtual_machine.network_security_group_id
 }
+
+output "vm_extension_ids" {
+  description = "Map of VM extension names to their resource IDs"
+  value       = module.virtual_machine.vm_extension_ids
+}

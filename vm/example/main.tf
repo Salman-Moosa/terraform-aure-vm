@@ -75,6 +75,9 @@ module "virtual_machine" {
   # Reads from terraform.tfvars. Remove this block if you don’t need secret storage.
   key_vault = var.key_vault
 
+  # ── Extensions ────────────────────────────────────────────────────────────
+  extensions = var.extensions
+
   # ── Log Analytics (optional) ────────────────────────────────────────────
   # Uncomment when you have a Log Analytics workspace.
   #
