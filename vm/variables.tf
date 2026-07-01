@@ -206,7 +206,13 @@ variable "enable_encryption_at_host" {
 }
 
 variable "enable_tpm" {
-  description = "(Optional) Enable vTPM on the virtual machine"
+  description = "(Optional) Enable vTPM (virtual Trusted Platform Module) on the virtual machine. Required for Secure Boot. Only supported on Gen2 VM images."
+  type        = bool
+  default     = false
+}
+
+variable "enable_secure_boot" {
+  description = "(Optional) Enable Secure Boot on the virtual machine (Trusted Launch). Requires a Gen2 VM image and vtpm_enabled = true."
   type        = bool
   default     = false
 }

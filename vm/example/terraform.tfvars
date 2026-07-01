@@ -28,7 +28,7 @@ private_ip_address_allocation_type = "Dynamic"
 # ─── Public IP (optional) ─────────────────────────────────────────────────────
 # Set create_public_ip_address = true to attach a public IP to the VM NIC.
 
-create_public_ip_address    = true
+create_public_ip_address    = true # by default false
 public_ip_allocation_method = "Static"
 public_ip_sku               = "Standard"
 
@@ -77,6 +77,7 @@ generate_admin_ssh_key = true
 # Optional VM Configuration
 # admin_username       = "azureadmin"
 # vm_availability_zone = "1"
+# secure boot is off by default, it requires a gen2 image not compatible with all images
 
 custom_data = <<-EOF
 #!/bin/bash
@@ -85,7 +86,6 @@ EOF
 
 # ─── OS Image ─────────────────────────────────────────────────────────────────
 # Ubuntu 22.04 LTS
-# Change these four values to use a different distro (RHEL, Debian, etc.).
 
 source_image_publisher = "Canonical"
 source_image_offer     = "0001-com-ubuntu-server-jammy"
@@ -154,15 +154,14 @@ extensions = {
 #   2. Grant the deploying identity (pipeline SP / your user) Secrets Officer
 #   3. Store the generated SSH private key as a secret automatically
 #
-# Requires generate_admin_ssh_key = true  AND  disable_password_authentication = true.
+# Requires generate_admin_ssh_key = true  AND  disable_password_authentication = true on by default.
 
 key_vault = {
   name                       = "kv-vm-test-app-dev" # must be globally unique, 3-24 chars
-  resource_group_name        = "devops"             # null = use VM's RG
   sku_name                   = "standard"
   purge_protection_enabled   = false # set true for production
   soft_delete_retention_days = 7
-
+  
   # ── Additional Secrets Officers (write access) ──────────────────────────
   secret_officers = [
     # { name = "my-team-sp", principal_id = "<object-id>" },

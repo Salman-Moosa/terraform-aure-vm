@@ -283,6 +283,7 @@ resource "azurerm_linux_virtual_machine" "linux_vm" {
   encryption_at_host_enabled      = var.enable_encryption_at_host
   zone                            = var.vm_availability_zone
   vtpm_enabled                    = var.enable_tpm
+  secure_boot_enabled             = var.enable_secure_boot
 
   tags = var.tags
 
