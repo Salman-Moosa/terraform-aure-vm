@@ -154,7 +154,7 @@ variable "existing_nsg_id" {
 variable "virtual_machine_size" {
   description = "The Virtual Machine SKU for the Virtual Machine, Default is Standard_A2_V2"
   type        = string
-  default     = "Standard_A2_v2"
+  default     = "Standard_B2s"
 }
 
 variable "disable_password_authentication" {
@@ -188,9 +188,26 @@ variable "dedicated_host_id" {
 }
 
 variable "custom_data" {
-  description = "Raw (unencoded) bash script that gets run once by cloud-init upon VM creation. The module handles base64 encoding."
-  type        = string
-  default     = null
+  description = <<-EOT
+    Cloud-init/bash script to run once on VM creation. Provide exactly one of:
+      content = "<plain text script>"
+      file    = "<path to script file>"
+  EOT
+
+  type = object({
+    content = optional(string)
+    file    = optional(string)
+  })
+
+  default = null
+
+  validation {
+    condition = var.custom_data == null || (
+      (var.custom_data.content != null) != (var.custom_data.file != null)
+    )
+
+    error_message = "Exactly one of custom_data.content or custom_data.file must be set (not both, not neither)."
+  }
 }
 
 variable "user_data" {
@@ -208,13 +225,13 @@ variable "enable_encryption_at_host" {
 variable "enable_tpm" {
   description = "(Optional) Enable vTPM (virtual Trusted Platform Module) on the virtual machine. Required for Secure Boot. Only supported on Gen2 VM images."
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "enable_secure_boot" {
   description = "(Optional) Enable Secure Boot on the virtual machine (Trusted Launch). Requires a Gen2 VM image and vtpm_enabled = true."
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "vm_availability_zone" {
@@ -259,15 +276,15 @@ variable "source_image_publisher" {
 }
 
 variable "source_image_offer" {
-  description = "Offer of the VM source image (e.g. 0001-com-ubuntu-server-jammy)"
+  description = "Offer of the VM source image (e.g. ubuntu-22_04-lts)"
   type        = string
-  default     = "0001-com-ubuntu-server-jammy"
+  default     = "ubuntu-22_04-lts"
 }
 
 variable "source_image_sku" {
-  description = "SKU of the VM source image (e.g. 22_04-lts, 22_04-lts-gen2)"
+  description = "SKU of the VM source image (e.g. server)"
   type        = string
-  default     = "22_04-lts"
+  default     = "server"
 }
 
 variable "source_image_version" {
@@ -334,7 +351,7 @@ variable "managed_identity_ids" {
 variable "enable_boot_diagnostics" {
   description = "Should the boot diagnostics enabled?"
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "data_disks" {
@@ -394,7 +411,7 @@ variable "key_vault" {
 variable "key_vault_purge_protection_enabled" {
   description = "Default for purge protection when not specified inside the key_vault object. Set true for production."
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "key_vault_soft_delete_retention_days" {

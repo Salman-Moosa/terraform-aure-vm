@@ -18,6 +18,11 @@ locals {
     }
   }
 
+  custom_data_raw = var.custom_data == null ? null : (
+    var.custom_data.file != null ? file(var.custom_data.file) : var.custom_data.content
+  )
+
+  custom_data_encoded = local.custom_data_raw != null ? base64encode(local.custom_data_raw) : null
 }
 
 #---------------------------------------------------------------
@@ -278,7 +283,7 @@ resource "azurerm_linux_virtual_machine" "linux_vm" {
   provision_vm_agent              = true
   allow_extension_operations      = true
   dedicated_host_id               = var.dedicated_host_id
-  custom_data                     = var.custom_data != null ? base64encode(var.custom_data) : null
+  custom_data                     = local.custom_data_encoded
   user_data                       = var.user_data != null ? base64encode(var.user_data) : null
   encryption_at_host_enabled      = var.enable_encryption_at_host
   zone                            = var.vm_availability_zone

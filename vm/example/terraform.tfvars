@@ -5,10 +5,10 @@
 
 
 
-resource_group_name = "devops"
+resource_group_name = "infra-sandbox"
 
 
-location = "centralindia"
+location = "UAE North"
 
 virtual_machine_name = "vm-test-app"
 
@@ -17,20 +17,19 @@ virtual_machine_name = "vm-test-app"
 # Subnet resource ID — paste the output from the VNet module.
 # e.g. if using modules: subnet_id = module.vnet.subnet_ids["public-az1"]
 
-subnet_id = "/subscriptions/26adfa24-368d-4a2c-b0d6-9b1ed5bf4d11/resourceGroups/devops/providers/Microsoft.Network/virtualNetworks/dev-vnet/subnets/db-az1"
-
+subnet_id = "/subscriptions/748797a3-ec14-4eb1-bffd-819c9a157541/resourceGroups/infra-sandbox/providers/Microsoft.Network/virtualNetworks/sandbox-vnet/subnets/public-az1"
 # ─── Private IP ───────────────────────────────────────────────────────────────
 # Default is Dynamic. Set to Static and provide an address if needed.
 
 private_ip_address_allocation_type = "Dynamic"
-# private_ip_address                 = "10.0.1.10"
+# private_ip_address                 = "10.0.1.10" for static
 
 # ─── Public IP (optional) ─────────────────────────────────────────────────────
 # Set create_public_ip_address = true to attach a public IP to the VM NIC.
 
-create_public_ip_address    = true # by default false
-public_ip_allocation_method = "Static"
-public_ip_sku               = "Standard"
+create_public_ip_address = true # by default false
+# public_ip_allocation_method = "Static"
+# public_ip_sku               = "Standard"
 
 # ─── NIC-level NSG (optional) ─────────────────────────────────────────────────
 # Option 1 — Create a new NSG with inline rules (fully named fields, stable map)
@@ -71,32 +70,47 @@ nsg_rules = {
 
 # ─── VM Configuration ─────────────────────────────────────────────────────────
 
-virtual_machine_size   = "Standard_B1ms"
+virtual_machine_size   = "Standard_B2s"
 generate_admin_ssh_key = true
 
 # Optional VM Configuration
-# admin_username       = "azureadmin"
+# admin_username       = "azureuser"
 # vm_availability_zone = "1"
-# secure boot is off by default, it requires a gen2 image not compatible with all images
 
-custom_data = <<-EOF
-#!/bin/bash
-echo "Hello, World!" > /var/log/custom-data.txt
-EOF
+# Secure boot (Trusted Launch) is on by default.
+# It requires a Gen2 image. If you are using a Gen1 image, you MUST set both to false.
+# enable_tpm         = true
+# enable_secure_boot = true
+
+# Option 1: Inline content
+custom_data = {
+  content = <<-EOF
+    #!/bin/bash
+    echo "Hello, World!" > /var/log/custom-data.txt
+  EOF
+}
+
+# Option 2: Local file less than 64kb
+# custom_data = {
+#   file = "scripts/init.sh"
+# }
+
+# Option 3: No custom data
+# custom_data = null
 
 # ─── OS Image ─────────────────────────────────────────────────────────────────
 # Ubuntu 22.04 LTS
 
 source_image_publisher = "Canonical"
-source_image_offer     = "0001-com-ubuntu-server-jammy"
-source_image_sku       = "22_04-lts"
+source_image_offer     = "ubuntu-22_04-lts"
+source_image_sku       = "server"
 source_image_version   = "latest"
 
 # ─── OS Disk ──────────────────────────────────────────────────────────────────
-# check type for diffrent workloads 
-# Premium SSD Best for production and performance sensitive workloads
-# Standard SSD Best for web servers, lightly used enterprise applications and dev/test
-# Standard HDD Best for backup, non-critical, and infrequent access
+# Check type for different workloads:
+# Premium_LRS: Best for production and performance-sensitive workloads
+# StandardSSD_LRS: Best for web servers, lightly used enterprise applications, and dev/test
+# Standard_LRS: Best for backup, non-critical, and infrequent access
 
 
 os_disk_storage_account_type = "StandardSSD_LRS"
@@ -154,25 +168,25 @@ extensions = {
 #   2. Grant the deploying identity (pipeline SP / your user) Secrets Officer
 #   3. Store the generated SSH private key as a secret automatically
 #
-# Requires generate_admin_ssh_key = true  AND  disable_password_authentication = true on by default.
+# Requires generate_admin_ssh_key = true AND disable_password_authentication = true (both are true by default).
 
-key_vault = {
-  name                       = "kv-vm-test-app-dev" # must be globally unique, 3-24 chars
-  sku_name                   = "standard"
-  purge_protection_enabled   = false # set true for production
-  soft_delete_retention_days = 7
-  
-  # ── Additional Secrets Officers (write access) ──────────────────────────
-  secret_officers = [
-    # { name = "my-team-sp", principal_id = "<object-id>" },
-    # { name = "devops-sandbox-admins", principal_id = "8eb5c0d8-484b-49eb-bbee-f91d3a02e8b0" }
-  ]
+# key_vault = {
+#   name                       = "kv-vm-test-app-dev" # must be globally unique, 3-24 chars
+#   sku_name                   = "standard"
+#   purge_protection_enabled   = false # set true for production
+#   soft_delete_retention_days = 7
 
-  # ── Secrets Readers (read-only) ─────────────────────────────────────────
-  # secret_readers = [
-  #   { name = "app-identity", principal_id = "<object-id>" },
-  # ]
-}
+#   # ── Additional Secrets Officers (write access) ──────────────────────────
+#   secret_officers = [
+#     # { name = "my-team-sp", principal_id = "<object-id>" },
+#     # { name = "devops-sandbox-admins", principal_id = "8eb5c0d8-484b-49eb-bbee-f91d3a02e8b0" }
+#   ]
+
+#   # ── Secrets Readers (read-only) ─────────────────────────────────────────
+#   # secret_readers = [
+#   #   { name = "app-identity", principal_id = "<object-id>" },
+#   # ]
+# }
 
 # ─── Tags ─────────────────────────────────────────────────────────────────────
 
@@ -180,7 +194,6 @@ tags = {
 
   Environment          = "dev"
   Owner                = "stackgenie"
-  Createdby            = "salman"
   ManagedBy            = "terraform"
   Service              = "linux-vm"
   Status               = "active"

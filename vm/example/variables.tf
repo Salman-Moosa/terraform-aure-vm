@@ -43,7 +43,7 @@ variable "virtual_machine_size" {
 variable "admin_username" {
   description = "The username of the local administrator used for the Virtual Machine."
   type        = string
-  default     = "azureadmin"
+  default     = "azureuser"
 }
 
 variable "vm_availability_zone" {
@@ -53,9 +53,23 @@ variable "vm_availability_zone" {
 }
 
 variable "custom_data" {
-  description = "Base64 encoded file of a bash script that gets run once by cloud-init upon VM creation"
-  type        = string
-  default     = null
+  description = <<-EOT
+    Cloud-init/bash script to run once on VM creation. Provide exactly one of:
+      content = "<plain text script>"
+      file    = "<path to script file>"
+  EOT
+  type = object({
+    content = optional(string)
+    file    = optional(string)
+  })
+  default = null
+
+  validation {
+    condition = var.custom_data == null || (
+      (var.custom_data.content != null) != (var.custom_data.file != null)
+    )
+    error_message = "Exactly one of custom_data.content or custom_data.file must be set (not both, not neither)."
+  }
 }
 
 
@@ -68,13 +82,13 @@ variable "source_image_publisher" {
 variable "source_image_offer" {
   description = "Offer of the VM source image"
   type        = string
-  default     = "0001-com-ubuntu-server-jammy"
+  default     = "ubuntu-22_04-lts"
 }
 
 variable "source_image_sku" {
-  description = "SKU of the VM source image (e.g. 22_04-lts, 22_04-lts-gen2)"
+  description = "SKU of the VM source image (e.g. server)"
   type        = string
-  default     = "22_04-lts"
+  default     = "server"
 }
 
 variable "source_image_version" {
@@ -82,6 +96,20 @@ variable "source_image_version" {
   type        = string
   default     = "latest"
 }
+# ── Secure Boot ─────────────────────────────────────────────────────────────────
+
+variable "enable_tpm" {
+  description = "(Optional) Enable vTPM (virtual Trusted Platform Module) on the virtual machine. Required for Secure Boot. Only supported on Gen2 VM images."
+  type        = bool
+  default     = true
+}
+
+variable "enable_secure_boot" {
+  description = "(Optional) Enable Secure Boot on the virtual machine (Trusted Launch). Requires a Gen2 VM image and vtpm_enabled = true."
+  type        = bool
+  default     = true
+}
+
 # ── SSH authentication ────────────────────────────────────────────────────────
 
 variable "generate_admin_ssh_key" {
